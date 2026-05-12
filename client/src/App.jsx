@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import FloatingDonate from './components/FloatingDonate'; // <-- Import it here
+import Home from './pages/Home';
+import History from './pages/History';
 
-// Placeholder pages for now
-const Home = () => <div style={{ padding: '2rem' }}><h2>Home: RL Environment</h2></div>;
-const History = () => <div style={{ padding: '2rem' }}><h2>History: Past Choices</h2></div>;
 const About = () => <div style={{ padding: '2rem' }}><h2>About Us</h2></div>;
 
 function App() {
@@ -15,6 +15,9 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/about" element={<About />} />
       </Routes>
+      
+      {/* Drops in the floating button globally */}
+      <FloatingDonate /> 
     </Router>
   );
 }
