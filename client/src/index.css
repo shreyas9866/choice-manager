@@ -1,19 +1,12 @@
-:root {
-  --bg-cream: rgb(255, 246, 222);
-  --primary-teal: rgb(139, 223, 221);
-  --accent-coral: rgb(244, 143, 104);
-  --card-butter: rgb(255, 227, 148);
-}
-
 body {
   margin: 0;
-  padding: 0;
-  background-color: var(--bg-cream);
-  font-family: 'Inter', system-ui, sans-serif;
-  color: #333;
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
+  min-height: 100vh;
+  /* Tell it to look in the public folder for your image */
+  background-image: url('/starry-bg.jpg'); 
+  background-size: cover; /* Makes sure it covers the whole screen */
+  background-position: center; /* Centers the cool castle/stars */
+  background-attachment: fixed; /* Keeps the stars still when you scroll down! */
+  
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }

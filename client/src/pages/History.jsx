@@ -1,20 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom'; 
+// IMPORT OUR GLOBAL BRAIN
+import { AuthContext } from '../context/AuthContext';
 
 export default function History() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate(); 
+  
+  // GRAB THE TOKEN FROM CONTEXT
+  const { token, user } = useContext(AuthContext);
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    // Only try to fetch if the user is actually logged in
+    if (token) {
+      fetchSessions();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/sessions');
+      const response = await fetch('http://localhost:5000/api/sessions', {
+        // ATTACH THE VIP PASS TO THE GET REQUEST
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
-      setSessions(data);
+      if (response.ok) {
+        setSessions(data);
+      } else {
+        console.error("Failed to fetch:", data.message);
+      }
       setLoading(false);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -25,7 +44,13 @@ export default function History() {
   const handleDeleteSingle = async (id) => {
     if (!window.confirm("Are you sure you want to delete this session?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/sessions/${id}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:5000/api/sessions/${id}`, { 
+        method: 'DELETE',
+        // ATTACH VIP PASS
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) setSessions(sessions.filter(session => session._id !== id));
     } catch (error) { console.error(error); }
   };
@@ -33,7 +58,13 @@ export default function History() {
   const handleClearAll = async () => {
     if (!window.confirm("🚨 WARNING: Delete ALL history? This cannot be undone.")) return;
     try {
-      const response = await fetch('http://localhost:5000/api/sessions', { method: 'DELETE' });
+      const response = await fetch('http://localhost:5000/api/sessions', { 
+        method: 'DELETE',
+        // ATTACH VIP PASS
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) setSessions([]);
     } catch (error) { console.error(error); }
   };
@@ -62,21 +93,37 @@ export default function History() {
     resumeBtn: { backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', marginLeft: '1rem', backdropFilter: 'blur(4px)' },
     clearAllBtn: { backgroundColor: 'transparent', color: '#ff4d4f', border: '2px solid #ff4d4f', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
     emptyBox: { textAlign: 'center', padding: '3rem', color: '#cbd5e1', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' },
-    contextBadge: { backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', color: 'white' }
+    contextBadge: { backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', color: 'white' },
+    loginPromptBtn: { backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', marginTop: '1rem', backdropFilter: 'blur(4px)' }
   };
 
   if (loading) return <div style={{ textAlign: 'center', marginTop: '3rem', color: 'white' }}><h2>Loading database...</h2></div>;
 
+  // IF NO TOKEN EXISTS, PROMPT THEM TO LOG IN FIRST
+  if (!token) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.emptyBox}>
+          <h2 style={{ color: 'white', margin: '0 0 1rem 0' }}>🔒 Access Denied</h2>
+          <p>You must be logged in to view your saved RL environments.</p>
+          <button style={styles.loginPromptBtn} onClick={() => navigate('/auth')}>
+            Log In or Sign Up
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.headerRow}>
-        <h2 style={styles.title}>Your Saved Environments</h2>
+        <h2 style={styles.title}>{user?.name}'s Saved Environments</h2>
         {sessions.length > 0 && <button style={styles.clearAllBtn} onClick={handleClearAll}>🗑️ Clear All</button>}
       </div>
       
       {sessions.length === 0 ? (
         <div style={styles.emptyBox}>
-          <h3>No history found!</h3>
+          <h3>No history found! Start training the AI on the Home page.</h3>
         </div>
       ) : (
         sessions.map(session => (
