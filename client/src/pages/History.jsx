@@ -1,61 +1,124 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 export default function History() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); 
 
-  // Fetch the data from the backend when the page loads
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/sessions');
-        const data = await response.json();
-        setSessions(data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching sessions:", error);
-        setLoading(false);
-      }
-    };
-
     fetchSessions();
   }, []);
 
-  const styles = {
-    container: { padding: '2rem', maxWidth: '800px', margin: '0 auto' },
-    card: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '1.5rem' },
-    choiceList: { listStyleType: 'none', padding: 0 },
-    choiceItem: { padding: '0.5rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' },
-    badge: { backgroundColor: 'var(--primary-teal)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }
+  const fetchSessions = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/sessions');
+      const data = await response.json();
+      setSessions(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      setLoading(false);
+    }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: '3rem' }}><h2>Loading database...</h2></div>;
+  const handleDeleteSingle = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this session?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/sessions/${id}`, { method: 'DELETE' });
+      if (response.ok) setSessions(sessions.filter(session => session._id !== id));
+    } catch (error) { console.error(error); }
+  };
+
+  const handleClearAll = async () => {
+    if (!window.confirm("🚨 WARNING: Delete ALL history? This cannot be undone.")) return;
+    try {
+      const response = await fetch('http://localhost:5000/api/sessions', { method: 'DELETE' });
+      if (response.ok) setSessions([]);
+    } catch (error) { console.error(error); }
+  };
+
+  const handleResume = (session) => {
+    navigate('/', { state: { resumeSession: session } });
+  };
+
+  const styles = {
+    container: { padding: '2rem', maxWidth: '800px', margin: '0 auto', color: '#cbd5e1' },
+    headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
+    title: { margin: 0, color: '#f8fafc' },
+    card: { 
+      backgroundColor: 'rgba(15, 23, 42, 0.75)', 
+      backdropFilter: 'blur(10px)', 
+      padding: '1.5rem', 
+      borderRadius: '12px', 
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)', 
+      border: '1px solid rgba(255,255,255,0.1)',
+      marginBottom: '1.5rem' 
+    },
+    choiceList: { listStyleType: 'none', padding: 0 },
+    choiceItem: { padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    badge: { backgroundColor: 'rgba(0, 196, 159, 0.2)', border: '1px solid var(--primary-teal, #00C49F)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: 'white' },
+    deleteBtn: { backgroundColor: 'rgba(255, 77, 79, 0.2)', color: '#ff4d4f', border: '1px solid rgba(255, 77, 79, 0.5)', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' },
+    resumeBtn: { backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', marginLeft: '1rem', backdropFilter: 'blur(4px)' },
+    clearAllBtn: { backgroundColor: 'transparent', color: '#ff4d4f', border: '2px solid #ff4d4f', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
+    emptyBox: { textAlign: 'center', padding: '3rem', color: '#cbd5e1', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' },
+    contextBadge: { backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', color: 'white' }
+  };
+
+  if (loading) return <div style={{ textAlign: 'center', marginTop: '3rem', color: 'white' }}><h2>Loading database...</h2></div>;
 
   return (
     <div style={styles.container}>
-      <h2>Your Saved Environments</h2>
+      <div style={styles.headerRow}>
+        <h2 style={styles.title}>Your Saved Environments</h2>
+        {sessions.length > 0 && <button style={styles.clearAllBtn} onClick={handleClearAll}>🗑️ Clear All</button>}
+      </div>
       
       {sessions.length === 0 ? (
-        <p>No sessions saved yet. Go to Home and save one!</p>
+        <div style={styles.emptyBox}>
+          <h3>No history found!</h3>
+        </div>
       ) : (
         sessions.map(session => (
           <div key={session._id} style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0 }}>{session.title}</h3>
-              <span style={styles.badge}>LR: {session.learningRate}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: 'white' }}>{session.title}</h3>
+                <span style={styles.badge}>LR: {session.learningRate}</span>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginLeft: '1rem' }}>
+                  {new Date(session.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div>
+                <button style={styles.resumeBtn} onClick={() => handleResume(session)}>🚀 Resume Training</button>
+                <button style={{...styles.deleteBtn, marginLeft: '0.5rem'}} onClick={() => handleDeleteSingle(session._id)}>Delete</button>
+              </div>
             </div>
-            
-            <p style={{ fontSize: '0.8rem', color: '#666' }}>
-              Saved on: {new Date(session.createdAt).toLocaleDateString()}
-            </p>
+
+            <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '1rem 0' }}/>
 
             <ul style={styles.choiceList}>
-              {session.choices.map(choice => (
-                <li key={choice._id} style={styles.choiceItem}>
-                  <span><strong>{choice.name}</strong></span>
-                  <span>Probability: {choice.probability}%</span>
-                </li>
-              ))}
+              {session.choices.map(choice => {
+                const learnedContexts = Object.entries(choice.qValues || {}).filter(([ctx, val]) => val > 0);
+
+                return (
+                  <li key={choice._id} style={styles.choiceItem}>
+                    <span style={{ fontSize: '1.1rem', color: 'white' }}><strong>{choice.name}</strong></span>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {learnedContexts.length === 0 ? (
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>No ratings yet</span>
+                      ) : (
+                        learnedContexts.map(([ctx, val]) => (
+                          <span key={ctx} style={styles.contextBadge}>
+                            {ctx}: <strong>{val.toFixed(2)}</strong>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))
