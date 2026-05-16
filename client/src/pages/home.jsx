@@ -1,28 +1,33 @@
 import { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom'; 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// IMPORT OUR GLOBAL BRAIN
 import { AuthContext } from '../context/AuthContext';
+import { TrainingContext } from '../context/TrainingContext';
 
 export default function Home() {
   const location = useLocation(); 
   const navigate = useNavigate();
-  
-  // GRAB THE TOKEN FROM CONTEXT
   const { token } = useContext(AuthContext);
 
-  const [sessionTitle, setSessionTitle] = useState('');
-  const [learningRate, setLearningRate] = useState(0.5);
+  // GRAB EVERYTHING FROM THE GLOBAL BRAIN
+  const { 
+    sessionTitle, setSessionTitle, 
+    learningRate, setLearningRate, 
+    choices, setChoices, 
+    currentContext, setCurrentContext, 
+    chartData, setChartData,
+    sliderValues, setSliderValues,
+    suggestion, setSuggestion,
+    clearSession 
+  } = useContext(TrainingContext);
+
+  // THIS IS THE ONLY LOCAL STATE LEFT
   const [newChoiceName, setNewChoiceName] = useState('');
-  const [choices, setChoices] = useState([]);
-  const [sliderValues, setSliderValues] = useState({});
-  const [currentContext, setCurrentContext] = useState('Default');
-  const [suggestion, setSuggestion] = useState(null); 
-  const [chartData, setChartData] = useState([]);
   
   const contextOptions = ['Default', 'Morning', 'Late Night', 'Sunny', 'Raining', 'Stressed', 'Celebration'];
   const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'];
 
+  // 1. Handle Resuming Sessions from History
   useEffect(() => {
     if (location.state && location.state.resumeSession) {
       const { title, learningRate, choices, historyLog } = location.state.resumeSession;
@@ -30,10 +35,13 @@ export default function Home() {
       setLearningRate(learningRate || 0.5);
       setChoices(calculateProbabilities(choices || [], currentContext));
       if (historyLog && historyLog.length > 0) setChartData(historyLog);
+      
+      // Clear the router state so refreshing doesn't cause a loop
       navigate('.', { replace: true, state: {} });
     }
   }, [location.state, navigate]);
 
+  // 2. The Math Engine
   const calculateProbabilities = (currentChoices, ctx) => {
     if (currentChoices.length === 0) return currentChoices;
     const maxQ = Math.max(...currentChoices.map(c => c.qValues[ctx] || 0), 0);
@@ -45,24 +53,32 @@ export default function Home() {
     }));
   };
 
-  useEffect(() => {
+  // 3. Handle Context Changing (THE FIX!)
+  const handleContextChange = (e) => {
+    const newCtx = e.target.value;
+    setCurrentContext(newCtx);
+    
     if (choices.length > 0) {
-      setChoices(prevChoices => calculateProbabilities(prevChoices, currentContext));
-      setSuggestion(null); 
-      setSliderValues({}); 
+      setChoices(prevChoices => calculateProbabilities(prevChoices, newCtx));
     }
-  }, [currentContext]);
+    setSuggestion(null);
+    setSliderValues({});
+  };
 
+  // 4. Handle Adding Choices
   const handleAddChoice = (e) => {
     e.preventDefault();
     if (!newChoiceName.trim()) return;
+    
     const newChoice = { id: Date.now(), name: newChoiceName, qValues: {} };
     contextOptions.forEach(ctx => { newChoice.qValues[ctx] = 0; });
+    
     const updatedChoices = [...choices, newChoice];
     setChoices(calculateProbabilities(updatedChoices, currentContext));
     setNewChoiceName('');
   };
 
+  // 5. Handle Rating (Updating Q-Values)
   const handleRate = (id, rating) => {
     const updatedChoices = choices.map(choice => {
       if (choice.id === id) {
@@ -83,8 +99,10 @@ export default function Home() {
     setSuggestion(null);
   };
 
+  // 6. Handle AI Suggestion
   const handleSuggest = () => {
     if (choices.length === 0) return alert("Please add some choices first!");
+    
     if (Math.random() < 0.15) {
       const randomIndex = Math.floor(Math.random() * choices.length);
       setSuggestion({ ...choices[randomIndex], reason: `Exploration 🎲 (Trying something different while it's ${currentContext}!)` });
@@ -94,11 +112,10 @@ export default function Home() {
     }
   };
 
+  // 7. Handle Saving to Database
   const handleSaveSession = async () => {
     if (!sessionTitle.trim()) return alert("Please give your session a name before saving!");
     if (choices.length === 0) return alert("Please add at least one choice before saving!");
-    
-    // NEW: Stop them if they aren't logged in!
     if (!token) return alert("🔒 You must be logged in to save your sessions!");
 
     try {
@@ -106,15 +123,14 @@ export default function Home() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          // NEW: Attach the VIP Pass
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ title: sessionTitle, learningRate, choices, historyLog: chartData })
       });
+      
       if (response.ok) {
         alert("✅ Session saved successfully!");
-        setSessionTitle(''); setChoices([]); setChartData([]); setSuggestion(null);
-        setSliderValues({}); setLearningRate(0.5); setCurrentContext('Default');
+        clearSession(); 
       } else {
         alert("❌ Failed to save session. Make sure you are logged in.");
       }
@@ -163,9 +179,12 @@ export default function Home() {
         <h2 style={{ marginTop: 0 }}>Setup Your Environment</h2>
         <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <input type="text" placeholder="Name this comparison..." value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} style={{ ...styles.input, flexGrow: 1, fontSize: '1.2rem', margin: 0 }} />
-          <select style={{...styles.input, margin: 0}} value={currentContext} onChange={(e) => setCurrentContext(e.target.value)}>
+          
+          {/* THE FIX IS RIGHT HERE IN THE SELECT DROPDOWN */}
+          <select style={{...styles.input, margin: 0}} value={currentContext} onChange={handleContextChange}>
             {contextOptions.map(ctx => <option key={ctx} value={ctx}>Context: {ctx}</option>)}
           </select>
+          
           <button onClick={handleSaveSession} style={{...styles.button, backgroundColor: 'rgba(255,255,255,0.15)', color: 'white'}}>💾 Save</button>
         </div>
         

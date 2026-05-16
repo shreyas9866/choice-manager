@@ -33,13 +33,15 @@ app.use('/api/auth', authRoutes);
 // 1. SAVE or UPDATE a Session 
 app.post('/api/sessions', authMiddleware, async (req, res) => {
   try {
-    const { title, learningRate, choices } = req.body;
+    // THE FIX: We added 'historyLog' here so it actually grabs the chart data!
+    const { title, learningRate, choices, historyLog } = req.body;
     
     const newSession = new Session({
-      user: req.user, // <-- IMPORTANT: We tether the session to the logged-in user!
+      user: req.user, 
       title,
       learningRate,
-      choices
+      choices,
+      historyLog // THE FIX: Tell MongoDB to save the chart!
     });
 
     const savedSession = await newSession.save();
