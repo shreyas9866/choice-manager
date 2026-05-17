@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 require('dotenv').config();
 
 // Route & Middleware Imports
@@ -90,6 +92,64 @@ app.delete('/api/sessions', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error clearing history:", error);
     res.status(500).json({ error: 'Failed to clear history' });
+  }
+});
+// ==========================================
+// RAZORPAY PAYMENT ROUTES
+// ==========================================
+
+// Initialize the Razorpay engine
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// Create a new payment order
+app.post('/api/razorpay/order', authMiddleware, async (req, res) => {
+  try {
+    // NEW: Grab the dynamic amount from the frontend request!
+    const { amount } = req.body; 
+    
+    // Razorpay needs the amount in paise (cents), so multiply by 100
+    const amountInPaise = amount * 100; 
+
+    const options = {
+      amount: amountInPaise, 
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`, 
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    res.status(200).json(order);
+  } catch (error) {
+    console.error("Error creating Razorpay order:", error);
+    res.status(500).json({ error: 'Failed to create payment order' });
+  }
+});
+// Verify the payment signature
+app.post('/api/razorpay/verify', authMiddleware, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    // Create the expected signature using our secret key
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(sign.toString())
+      .digest("hex");
+
+    // Compare what Razorpay sent us with what we mathematically expect
+    if (razorpay_signature === expectedSign) {
+      // It's a match! The payment is 100% legit.
+      // (If we had a Premium User database, we would update their status here)
+      return res.status(200).json({ message: "Payment verified successfully!" });
+    } else {
+      // Someone is trying to hack the payment system!
+      return res.status(400).json({ error: "Invalid payment signature!" });
+    }
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    res.status(500).json({ error: 'Failed to verify payment' });
   }
 });
 
