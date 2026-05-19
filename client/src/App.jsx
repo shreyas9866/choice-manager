@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { TrainingProvider } from './context/TrainingContext'; // <-- IMPORT THIS
-
+import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import History from './pages/History';
@@ -21,6 +21,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/history" element={<History />} />
               <Route path="/about" element={<About />} />
+              <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </div>
         </Router>

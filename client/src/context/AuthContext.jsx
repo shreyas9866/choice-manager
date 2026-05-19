@@ -1,22 +1,14 @@
-// client/src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-
-  // Check if there's a token in localStorage when the app loads
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  // Initialize state from local storage safely
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser && savedUser !== 'undefined' ? JSON.parse(savedUser) : null;
+  });
 
   const login = (newToken, userData) => {
     setToken(newToken);
@@ -32,8 +24,43 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  // ==========================================
+  // THE GLOBAL FETCH INTERCEPTOR
+  // ==========================================
+  useEffect(() => {
+    // 1. Save a copy of the browser's original fetch function
+    const originalFetch = window.fetch;
+
+    // 2. Override it with our custom security wrapper
+    window.fetch = async (...args) => {
+      
+      // 3. Let the fetch happen normally
+      const response = await originalFetch(...args);
+
+      // 4. Inspect the result! If the Bouncer gives a 401...
+      if (response.status === 401) {
+        console.error("🛡️ Interceptor Alert: Token expired or invalid!");
+        
+        // Nuke the dead token and user data
+        logout(); 
+        
+        // Alert the user and kick them to the authentication screen
+        alert("🔒 Your secure session has expired. Please log in again to save your progress.");
+        window.location.href = '/auth'; 
+      }
+
+      // 5. Otherwise, pass the response back to React normally
+      return response;
+    };
+
+    // Cleanup: restore original fetch if this component ever unmounts
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []); 
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ token, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

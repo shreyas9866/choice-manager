@@ -95,6 +95,45 @@ app.delete('/api/sessions', authMiddleware, async (req, res) => {
   }
 });
 // ==========================================
+// GLOBAL ANALYTICS ROUTE
+// ==========================================
+app.get('/api/analytics/global', async (req, res) => {
+  try {
+    const allSessions = await Session.find();
+    
+    // We will group data like this: { "Sunny": { "pizza": [6.5, 7.0], "ramen": [5.0] } }
+    const contextData = {};
+
+    allSessions.forEach(session => {
+      session.choices.forEach(choice => {
+        // Normalize names so "Pizza" and "pizza" are grouped together
+        const name = choice.name.toLowerCase().trim();
+        
+        for (const [ctx, qVal] of Object.entries(choice.qValues)) {
+          if (!contextData[ctx]) contextData[ctx] = {};
+          if (!contextData[ctx][name]) contextData[ctx][name] = [];
+          contextData[ctx][name].push(qVal);
+        }
+      });
+    });
+
+    // Average the arrays and format for Recharts
+    const chartData = Object.keys(contextData).map(ctx => {
+      const dataPoint = { context: ctx };
+      for (const [name, values] of Object.entries(contextData[ctx])) {
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        dataPoint[name] = parseFloat(avg.toFixed(2));
+      }
+      return dataPoint;
+    });
+
+    res.status(200).json(chartData);
+  } catch (error) {
+    console.error("Error fetching global analytics:", error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+// ==========================================
 // RAZORPAY PAYMENT ROUTES
 // ==========================================
 

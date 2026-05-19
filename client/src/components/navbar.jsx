@@ -9,7 +9,8 @@ export default function Navbar() {
 
   let activeIndex = 0;
   if (location.pathname === '/history') activeIndex = 1;
-  else if (location.pathname === '/about') activeIndex = 2;
+  else if (location.pathname === '/dashboard') activeIndex = 2; // NEW
+  else if (location.pathname === '/about') activeIndex = 3;     // Shifted to 3
 
   const BUTTON_WIDTH = 110; 
   const GAP = 8; 
@@ -185,7 +186,9 @@ export default function Navbar() {
           <div style={styles.slidingPill} />
           <Link to="/" style={styles.link(activeIndex === 0)}>🏠 Home</Link>
           <Link to="/history" style={styles.link(activeIndex === 1)}>📚 History</Link>
-          <Link to="/about" style={styles.link(activeIndex === 2)}>ℹ️ About</Link>
+          {/* NEW DASHBOARD LINK */}
+          <Link to="/dashboard" style={styles.link(activeIndex === 2)}>🌍 Global</Link>
+          <Link to="/about" style={styles.link(activeIndex === 3)}>ℹ️ About</Link>
         </div>
       </div>
 
