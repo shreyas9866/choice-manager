@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+// NEW: Set up the dynamic API URL for deployment
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function Dashboard() {
   const [globalData, setGlobalData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +14,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchGlobalData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/analytics/global');
+        // 🚀 UPDATED: Using dynamic API_URL instead of hardcoded localhost
+        const response = await fetch(`${API_URL}/api/analytics/global`);
         const data = await response.json();
         setGlobalData(data);
       } catch (error) {

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 import { TrainingContext } from '../context/TrainingContext';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function Home() {
   const location = useLocation(); 
@@ -119,7 +120,7 @@ export default function Home() {
     if (!token) return alert("🔒 You must be logged in to save your sessions!");
 
     try {
-      const response = await fetch('http://localhost:5000/api/sessions', {
+      const response = await fetch(`${API_URL}/api/...`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

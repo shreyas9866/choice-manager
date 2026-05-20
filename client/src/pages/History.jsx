@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 // IMPORT OUR GLOBAL BRAIN
 import { AuthContext } from '../context/AuthContext';
 
+// NEW: Set up the dynamic API URL for deployment
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function History() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,8 @@ export default function History() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/sessions', {
+      // 🚀 UPDATED: Using dynamic API_URL
+      const response = await fetch(`${API_URL}/api/sessions`, {
         // ATTACH THE VIP PASS TO THE GET REQUEST
         headers: {
           'Authorization': `Bearer ${token}`
@@ -44,7 +48,8 @@ export default function History() {
   const handleDeleteSingle = async (id) => {
     if (!window.confirm("Are you sure you want to delete this session?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/sessions/${id}`, { 
+      // 🚀 UPDATED: Using dynamic API_URL
+      const response = await fetch(`${API_URL}/api/sessions/${id}`, { 
         method: 'DELETE',
         // ATTACH VIP PASS
         headers: {
@@ -58,7 +63,8 @@ export default function History() {
   const handleClearAll = async () => {
     if (!window.confirm("🚨 WARNING: Delete ALL history? This cannot be undone.")) return;
     try {
-      const response = await fetch('http://localhost:5000/api/sessions', { 
+      // 🚀 UPDATED: Using dynamic API_URL
+      const response = await fetch(`${API_URL}/api/sessions`, { 
         method: 'DELETE',
         // ATTACH VIP PASS
         headers: {

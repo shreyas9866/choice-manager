@@ -3,6 +3,9 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
+// NEW: Set up the dynamic API URL for deployment
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation(); // 2. Grab the location
@@ -34,7 +37,8 @@ const Auth = () => {
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
     
     try {
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      // 🚀 UPDATED: Using dynamic API_URL
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(isLogin ? { email: formData.email, password: formData.password } : formData)

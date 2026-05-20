@@ -2,6 +2,9 @@ import { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; 
 
+// NEW: Set up the dynamic API URL for deployment
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -9,8 +12,8 @@ export default function Navbar() {
 
   let activeIndex = 0;
   if (location.pathname === '/history') activeIndex = 1;
-  else if (location.pathname === '/dashboard') activeIndex = 2; // NEW
-  else if (location.pathname === '/about') activeIndex = 3;     // Shifted to 3
+  else if (location.pathname === '/dashboard') activeIndex = 2; 
+  else if (location.pathname === '/about') activeIndex = 3;     
 
   const BUTTON_WIDTH = 110; 
   const GAP = 8; 
@@ -31,17 +34,15 @@ export default function Navbar() {
   };
 
   // 2. The main checkout function
- const handleDonateClick = async () => {
+  const handleDonateClick = async () => {
     if (!token) {
       alert("Please log in first to make a donation!");
       navigate('/auth', { state: { isLogin: true } });
       return;
     }
 
-    // NEW: Ask the user how much they want to donate!
     const amountInput = window.prompt("Enter your donation amount (₹):", "150");
     
-    // If they click cancel or enter text instead of a number, stop.
     if (!amountInput || isNaN(amountInput) || Number(amountInput) < 1) {
       return; 
     }
@@ -53,37 +54,31 @@ export default function Navbar() {
     }
 
     try {
-      const orderResponse = await fetch('http://localhost:5000/api/razorpay/order', {
+      // 🚀 UPDATED: Using dynamic API_URL
+      const orderResponse = await fetch(`${API_URL}/api/razorpay/order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        // NEW: Send the custom amount to the backend!
         body: JSON.stringify({ amount: Number(amountInput) })
       });
       
       const orderData = await orderResponse.json();
       
-      // ... (the rest of your Razorpay options block stays EXACTLY the same)
-
       if (!orderResponse.ok) {
         alert("Failed to initialize payment. Try again.");
         return;
       }
 
-      // Step B: Set up the Razorpay pop-up window
-     const options = {
-        key: 'rzp_test_SqLjDe0ljeBLzM', // 🚨 Your actual Test Key ID
+      const options = {
+        key: 'rzp_test_SqLjDe0ljeBLzM', 
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'RL Choice Manager',
         description: 'Thank you for supporting the project! 💖',
-        order_id: orderData.id, // The secure ID from our backend
+        order_id: orderData.id, 
         
-        // ==========================================
-        // NEW: FORCE UPI TO SHOW FIRST
-        // ==========================================
         config: {
           display: {
             blocks: {
@@ -103,11 +98,10 @@ export default function Navbar() {
           }
         },
 
-        // This function runs automatically when the payment is successful on the frontend
         handler: async function (response) {
           try {
-            // Send the proof to our backend Bouncer
-            const verifyRes = await fetch('http://localhost:5000/api/razorpay/verify', {
+            // 🚀 UPDATED: Using dynamic API_URL
+            const verifyRes = await fetch(`${API_URL}/api/razorpay/verify`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -131,7 +125,6 @@ export default function Navbar() {
           }
         },
         
-        // Don't forget to keep your prefill and theme down here!
         prefill: {
           name: user.name,
           email: user.email,
@@ -141,7 +134,6 @@ export default function Navbar() {
         }
       };
 
-      // Step C: Open the window!
       const paymentObject = new window.Razorpay(options);
       paymentObject.open();
 
@@ -186,7 +178,6 @@ export default function Navbar() {
           <div style={styles.slidingPill} />
           <Link to="/" style={styles.link(activeIndex === 0)}>🏠 Home</Link>
           <Link to="/history" style={styles.link(activeIndex === 1)}>📚 History</Link>
-          {/* NEW DASHBOARD LINK */}
           <Link to="/dashboard" style={styles.link(activeIndex === 2)}>🌍 Global</Link>
           <Link to="/about" style={styles.link(activeIndex === 3)}>ℹ️ About</Link>
         </div>
@@ -197,7 +188,7 @@ export default function Navbar() {
           style={styles.donateBtn}
           onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
           onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          onClick={handleDonateClick} // <-- CHANGED THIS TO OUR NEW FUNCTION
+          onClick={handleDonateClick}
         >
           💖 Donate
         </button>
