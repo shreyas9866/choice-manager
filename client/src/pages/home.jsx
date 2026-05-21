@@ -54,7 +54,7 @@ export default function Home() {
     }));
   };
 
-  // 3. Handle Context Changing (THE FIX!)
+  // 3. Handle Context Changing
   const handleContextChange = (e) => {
     const newCtx = e.target.value;
     setCurrentContext(newCtx);
@@ -120,7 +120,7 @@ export default function Home() {
     if (!token) return alert("🔒 You must be logged in to save your sessions!");
 
     try {
-      const response = await fetch(`${API_URL}/api/...`, {
+      const response = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -138,6 +138,15 @@ export default function Home() {
     } catch (error) {
       alert("❌ Server connection error.");
     }
+  };
+
+  // ==========================================
+  // NEW: DYNAMIC HELPER FUNCTION FOR ALPHA
+  // ==========================================
+  const getAlphaDescription = (alphaValue) => {
+    if (alphaValue >= 0.8) return "⚡ Fast & Impulsive: Quickly overwrites past knowledge with new results.";
+    if (alphaValue >= 0.4) return "⚖️ Balanced: Evenly blends historical data with recent events.";
+    return "🐢 Slow & Steady: Relies heavily on long-term history, adapts slowly.";
   };
 
   const activeChartData = chartData.filter(d => d.context === currentContext);
@@ -181,7 +190,6 @@ export default function Home() {
         <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <input type="text" placeholder="Name this comparison..." value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} style={{ ...styles.input, flexGrow: 1, fontSize: '1.2rem', margin: 0 }} />
           
-          {/* THE FIX IS RIGHT HERE IN THE SELECT DROPDOWN */}
           <select style={{...styles.input, margin: 0}} value={currentContext} onChange={handleContextChange}>
             {contextOptions.map(ctx => <option key={ctx} value={ctx}>Context: {ctx}</option>)}
           </select>
@@ -192,7 +200,19 @@ export default function Home() {
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <div style={{ flexGrow: 1 }}>
             <label><strong>Learning Rate (α):</strong> {learningRate}</label>
-            <input type="range" min="0.01" max="1" step="0.01" value={learningRate} onChange={(e) => setLearningRate(parseFloat(e.target.value))} style={{ width: '100%', marginTop: '0.5rem' }} />
+            <input type="range" min="0.01" max="1" step="0.01" value={learningRate} onChange={(e) => setLearningRate(parseFloat(e.target.value))} style={{ width: '100%', marginTop: '0.5rem', cursor: 'pointer' }} />
+            
+            {/* NEW: DYNAMIC HELPER TEXT RENDERED HERE */}
+            <p style={{ 
+              color: '#94a3b8', 
+              fontSize: '0.85rem', 
+              marginTop: '0.5rem',
+              fontStyle: 'italic',
+              transition: 'all 0.3s ease'
+            }}>
+              {getAlphaDescription(learningRate)}
+            </p>
+
           </div>
         </div>
 
