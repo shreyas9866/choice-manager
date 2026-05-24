@@ -59,7 +59,6 @@ export default function About() {
       color: 'white',
       boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
     },
-    // NEW: Founder Section Styles
     founderCard: {
       display: 'flex',
       alignItems: 'center',
@@ -90,7 +89,7 @@ export default function About() {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className="responsive-container">
       <div style={styles.header}>
         <h1 style={styles.title}>Under the Hood</h1>
         <p style={styles.subtitle}>
@@ -120,6 +119,13 @@ export default function About() {
       </div>
 
       <div style={styles.card}>
+        <h3 style={styles.h3}>🐳 Containerized Deployment</h3>
+        <p>
+          To guarantee 100% environment consistency across development and production, the backend engine is containerized using <strong>Docker</strong>. This eliminates "works on my machine" bugs by packaging the Node.js runtime, dependencies, and environment variables into isolated, secure Linux environments.
+        </p>
+      </div>
+
+      <div style={styles.card}>
         <h3 style={styles.h3}>🌍 Global Hive Mind Analytics</h3>
         <p>
           Beyond individual user sessions, the backend runs aggregation pipelines to combine Q-Values across the entire database. This forms a "Global Hive Mind," visualizing the collective decision-making trends of all users interacting with the environments.
@@ -132,8 +138,8 @@ export default function About() {
           This project is a fully deployed, monetizable SaaS application featuring secure JWT authentication, RESTful APIs, and a cryptographic payment gateway.
         </p>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {/* We added all your new tech here! */}
-          {['React.js', 'Vite', 'Node.js', 'Express', 'MongoDB Atlas', 'JWT Auth', 'Razorpay API', 'Recharts', 'Vercel', 'Render'].map(tech => (
+          {/* Docker added to the Tech Stack map array! */}
+          {['React.js', 'Vite', 'Node.js', 'Express', 'MongoDB Atlas', 'JWT Auth', 'Razorpay API', 'Recharts', 'Docker', 'Vercel', 'Render'].map(tech => (
             <span key={tech} style={styles.techBadge}>
               {tech}
             </span>

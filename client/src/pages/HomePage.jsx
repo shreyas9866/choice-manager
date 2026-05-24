@@ -184,10 +184,10 @@ export default function Home() {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className="responsive-container">
       <div style={styles.headerBox}>
         <h2 style={{ marginTop: 0 }}>Setup Your Environment</h2>
-        <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }} className="responsive-input-group">
           <input type="text" placeholder="Name this comparison..." value={sessionTitle} onChange={(e) => setSessionTitle(e.target.value)} style={{ ...styles.input, flexGrow: 1, fontSize: '1.2rem', margin: 0 }} />
           
           <select style={{...styles.input, margin: 0}} value={currentContext} onChange={handleContextChange}>
